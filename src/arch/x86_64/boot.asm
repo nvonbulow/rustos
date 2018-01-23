@@ -4,6 +4,7 @@ extern long_mode_start
 section .text
 bits 32
 start:
+  mov edi, ebx
   mov esp, stack_top
   ; print `OK` to screen
   mov dword [0xb8000], 0x2f4b2f4f

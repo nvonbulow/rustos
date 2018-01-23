@@ -7,20 +7,28 @@ grub_cfg := src/arch/$(arch)/grub.cfg
 assembly_source_files := $(wildcard src/arch/$(arch)/*.asm)
 assembly_object_files := $(patsubst src/arch/$(arch)/%.asm, \
     build/arch/$(arch)/%.o, $(assembly_source_files))
+rust_source_files := $(shell find src/ -type f -name "*.rs")
 
 target ?= $(arch)-rustos
-rust_os = target/$(target)/debug/librustos.a
+buildtype ?= debug
+rust_os = target/$(target)/$(buildtype)/librustos.a
 
-.PHONY: all clean run iso kernel
+.PHONY: all clean run debug iso kernel
 
 all: $(kernel)
 
 clean:
-	@rm -r build
+	@rm -rf build
 	@xargo clean
 
 run: $(iso)
-	@qemu-system-x86_64 -cdrom $(iso) 2>/dev/null
+	@qemu-system-x86_64 -cdrom $(iso) -s 2>/dev/null
+
+debug: $(iso)
+	@qemu-system-x86_64 -cdrom $(iso) -s -S 2>/dev/null
+
+gdb: $(kernel)
+	@rust-gdb $(kernel) -ex "target remote :1234"
 
 iso: $(iso)
 
@@ -31,10 +39,10 @@ $(iso): $(kernel) $(grub_cfg)
 	@grub-mkrescue -o $(iso) build/isofiles 2> /dev/null
 	@rm -r build/isofiles
 
-$(kernel): kernel $(assembly_object_files) $(linker_script)
+$(kernel): $(rust_os) $(assembly_object_files) $(linker_script)
 	ld -n --gc-sections -T $(linker_script) -o $(kernel) $(assembly_object_files) $(rust_os)
 
-kernel:
+$(rust_os): $(rust_source_files)
 	@RUST_TARGET_PATH="$(shell pwd)" xargo build --target $(target)
 
 # compile assembly files

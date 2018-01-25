@@ -87,6 +87,11 @@ setup_paging:
   or eax, 0b11 ; present + writable
   mov [p4_table], eax
 
+  ; map last p4 entry to p4 for recursive access
+  mov eax, p4_table
+  or eax, 0b11 ; present + writable
+  mov [p4_table + 511 * 8], eax
+
   ; map first p3 entry to p2 table
   mov eax, p2_table
   or eax, 0b11 ; present + writable
@@ -116,15 +121,15 @@ enable_paging:
   or eax, 1 << 5
   mov cr4, eax
 
-  ; Set long mode in the MSR
+  ; Set long mode and no execute bit in the MSR
   mov ecx, 0xC0000080
   rdmsr
-  or eax, 1 << 8
+  or eax, 1 << 8 | 1 << 11
   wrmsr
 
-  ; Enable paging at long last
+  ; Enable paging and write-protection
   mov eax, cr0
-  or eax, 1 << 31
+  or eax, 1 << 31 | 1 << 16
   mov cr0, eax
 
   ret

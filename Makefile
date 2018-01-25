@@ -22,13 +22,13 @@ clean:
 	@xargo clean
 
 run: $(iso)
-	@qemu-system-x86_64 -cdrom $(iso) -s 2>/dev/null
+	@qemu-system-x86_64 -d int -no-reboot -cdrom $(iso) -s
 
 debug: $(iso)
-	@qemu-system-x86_64 -cdrom $(iso) -s -S 2>/dev/null
+	@qemu-system-x86_64 -d int -no-reboot -cdrom $(iso) -s -S
 
 gdb: $(kernel)
-	@rust-gdb $(kernel) -ex "target remote :1234"
+	@gdb $(kernel) -ex "target remote :1234"
 
 iso: $(iso)
 

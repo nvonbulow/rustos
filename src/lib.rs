@@ -1,41 +1,57 @@
+#![feature(alloc)]
+#![feature(allocator_api)]
+#![feature(global_allocator)]
 #![feature(lang_items)]
 #![feature(unique)]
 #![feature(const_fn)]
 #![no_std]
 
 #[macro_use]
+extern crate alloc;
+#[macro_use]
 extern crate bitflags;
 extern crate multiboot2;
+#[macro_use]
+extern crate once;
 extern crate rlibc;
 extern crate spin;
 extern crate volatile;
+extern crate x86;
+extern crate x86_64;
 
 #[macro_use]
 mod vga_buffer;
+mod memory;
+
+pub const HEAP_START: usize = 0o_000_001_000_000_0000;
+pub const HEAP_SIZE: usize = 100 * 1024;
+
+#[global_allocator]
+static HEAP_ALLOCATOR: memory::heap_allocator::BumpAllocator = memory::heap_allocator::BumpAllocator::new(HEAP_START, HEAP_START + HEAP_SIZE);
 
 #[no_mangle]
 pub extern fn rust_main(multiboot_info: usize) {
-    let boot_info = unsafe { multiboot2::load(multiboot_info) };
-    let memory_map_tag = boot_info.memory_map_tag().expect("Memory Map Tag Required");
-    let elf_sections_tag = boot_info.elf_sections_tag().expect("Elf Sections Tag Required!");
-
     vga_buffer::clear_screen();
-    kprint!("hello");
-    kprintln!("memory areas");
-    for area in memory_map_tag.memory_areas() {
-        kprintln!("  start: 0x{:x}, length: 0x{:x}", area.base_addr, area.length);
-    }
-    kprintln!("Kernel sections:");
-    for section in elf_sections_tag.sections() {
-        kprintln!("  addr: 0x{:x}, size: 0x{:x}, flags: 0x{:x}", section.addr, section.size, section.flags);
-    }
-    let kernel_start = elf_sections_tag.sections().map(|s| s.addr).min().unwrap();
-    let kernel_end = elf_sections_tag.sections().map(|s| s.addr + s.size).max().unwrap();
-    let multiboot_start = multiboot_info;
-    let multiboot_end = multiboot_start + (boot_info.total_size as usize);
+    kprintln!("Hello!");
 
-    kprintln!("Kernel goes from 0x:{:x} to 0x{:x}", kernel_start, kernel_end);
-    kprintln!("Multiboot goes from 0x{:x} to 0x{:x}", multiboot_start, multiboot_end);
+    let boot_info = unsafe {
+        multiboot2::load(multiboot_info)
+    };
+    memory::init(boot_info);
+    // allocator.allocate_frame();
+
+    use alloc::boxed::Box;
+    let heap_test = Box::new(42);
+    let mut test_vec = vec![1,2,3,4,5,6,7,8,9,0];
+    test_vec[5] = 2;
+    for i in test_vec {
+        kprint!("{} ", i);
+    }
+    kprintln!("");
+    for i in 1..1000000 {
+        format!("String-O");
+    }
+    kprintln!("We did NOT crash!!");
     loop {}
 }
 

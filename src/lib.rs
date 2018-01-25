@@ -23,12 +23,6 @@ extern crate x86_64;
 mod vga_buffer;
 mod memory;
 
-pub const HEAP_START: usize = 0o_000_001_000_000_0000;
-pub const HEAP_SIZE: usize = 100 * 1024;
-
-#[global_allocator]
-static HEAP_ALLOCATOR: memory::heap_allocator::BumpAllocator = memory::heap_allocator::BumpAllocator::new(HEAP_START, HEAP_START + HEAP_SIZE);
-
 #[no_mangle]
 pub extern fn rust_main(multiboot_info: usize) {
     vga_buffer::clear_screen();
@@ -38,16 +32,20 @@ pub extern fn rust_main(multiboot_info: usize) {
         multiboot2::load(multiboot_info)
     };
     memory::init(boot_info);
-    // allocator.allocate_frame();
-
+    unsafe {
+        HEAP_ALLOCATOR.lock().init(HEAP_START, HEAP_SIZE)
+    }
+    kprintln!("Check 1");
     use alloc::boxed::Box;
     let heap_test = Box::new(42);
+    kprintln!("Check 2");
     let mut test_vec = vec![1,2,3,4,5,6,7,8,9,0];
+    kprintln!("Check 3");
     test_vec[5] = 2;
     for i in test_vec {
         kprint!("{} ", i);
     }
-    kprintln!("");
+    kprintln!("Check 4");
     for i in 1..1000000 {
         format!("String-O");
     }
@@ -55,6 +53,12 @@ pub extern fn rust_main(multiboot_info: usize) {
     loop {}
 }
 
+pub const HEAP_START: usize = 0o_000_001_000_000_0000;
+pub const HEAP_SIZE: usize = 100 * 1024;
+
+use memory::heap_allocator::linked_list_allocator::LockedHeap;
+#[global_allocator]
+static HEAP_ALLOCATOR: LockedHeap = LockedHeap::empty();
 
 
 #[lang = "eh_personality"]

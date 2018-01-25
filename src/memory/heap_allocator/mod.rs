@@ -1,6 +1,8 @@
 use alloc::heap::{Alloc, AllocErr, Layout};
 use core::sync::atomic::{AtomicUsize, Ordering};
 
+pub mod linked_list_allocator;
+
 #[derive(Debug)]
 pub struct BumpAllocator {
     heap_start: usize,

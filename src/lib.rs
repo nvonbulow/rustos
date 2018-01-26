@@ -27,6 +27,7 @@ extern crate x86_64;
 #[macro_use]
 mod vga_buffer;
 mod interrupts;
+mod io;
 mod memory;
 
 #[no_mangle]

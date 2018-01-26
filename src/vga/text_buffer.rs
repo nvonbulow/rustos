@@ -125,7 +125,7 @@ pub static WRITER: Mutex<Writer> = Mutex::new(Writer {
 
 macro_rules! kprint {
     ($($arg:tt)*) => ({
-        $crate::vga_buffer::kprint(format_args!($($arg)*))
+        $crate::vga::text_buffer::kprint(format_args!($($arg)*))
     });
 }
 

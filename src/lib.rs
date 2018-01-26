@@ -18,6 +18,7 @@ extern crate lazy_static;
 extern crate multiboot2;
 #[macro_use]
 extern crate once;
+extern crate raw_cpuid;
 extern crate rlibc;
 extern crate spin;
 extern crate volatile;
@@ -25,14 +26,14 @@ extern crate x86;
 extern crate x86_64;
 
 #[macro_use]
-mod vga_buffer;
+mod vga;
 mod interrupts;
 mod io;
 mod memory;
 
 #[no_mangle]
 pub extern fn rust_main(multiboot_info: usize) {
-    vga_buffer::clear_screen();
+    vga::text_buffer::clear_screen();
     kprintln!("Hello!");
 
     let boot_info = unsafe {

@@ -6,6 +6,7 @@ use x86_64::VirtualAddress;
 
 use memory::MemoryController;
 
+pub mod apic;
 mod gdt;
 
 lazy_static! {
@@ -57,6 +58,8 @@ pub fn init(memory_controller: &mut MemoryController) {
         set_cs(code_selector);
         // load TSS
         load_tss(tss_selector);
+        // Disable PIC
+        apic::init();
     }
 
     IDT.load();

@@ -22,7 +22,7 @@ clean:
 	@xargo clean
 
 run: $(iso)
-	@qemu-system-x86_64 -d int -no-reboot -cdrom $(iso) -s
+	@qemu-system-x86_64 -no-reboot -cdrom $(iso) -s
 
 debug: $(iso)
 	@qemu-system-x86_64 -d int -no-reboot -cdrom $(iso) -s -S

@@ -23,37 +23,37 @@ impl Mapper {
         unsafe { self.p4.as_mut() }
     }
 
-    pub fn map<A>(&mut self, page: Page, flags: PageEntryFlags, allocator: &mut A)
+    pub fn map<A>(&mut self, page: Page, flags: EntryFlags, allocator: &mut A)
         where A: FrameAllocator {
         let frame = allocator.allocate_frame().expect("Out of memory");
         self.map_to(page, frame, flags, allocator)
     }
 
-    pub fn map_range<A>(&mut self, pages: PageIter, flags: PageEntryFlags, allocator: &mut A)
+    pub fn map_range<A>(&mut self, pages: PageIter, flags: EntryFlags, allocator: &mut A)
         where A: FrameAllocator {
         for page in pages {
             self.map(page, flags, allocator);
         }
     }
 
-    pub fn map_to<A>(&mut self, page: Page, frame: Frame, flags: PageEntryFlags, allocator: &mut A)
+    pub fn map_to<A>(&mut self, page: Page, frame: Frame, flags: EntryFlags, allocator: &mut A)
         where A: FrameAllocator {
         let mut p3 = self.p4_mut().next_table_create(page.p4_index(), allocator);
         let mut p2 = p3.next_table_create(page.p3_index(), allocator);
         let mut p1 = p2.next_table_create(page.p2_index(), allocator);
 
         assert!(p1[page.p1_index()].is_unused());
-        p1[page.p1_index()].set(frame, flags | PageEntryFlags::PRESENT);
+        p1[page.p1_index()].set(frame, flags | EntryFlags::PRESENT);
     }
 
-    pub fn identity_map_range<A>(&mut self, frames: FrameIter, flags: PageEntryFlags, allocator: &mut A)
+    pub fn identity_map_range<A>(&mut self, frames: FrameIter, flags: EntryFlags, allocator: &mut A)
         where A: FrameAllocator {
         for frame in frames {
             &mut self.identity_map(frame, flags, allocator);
         }
     }
 
-    pub fn identity_map<A>(&mut self, frame: Frame, flags: PageEntryFlags, allocator: &mut A)
+    pub fn identity_map<A>(&mut self, frame: Frame, flags: EntryFlags, allocator: &mut A)
         where A: FrameAllocator {
         let page = Page::containing_address(frame.start_address());
         self.map_to(page, frame, flags, allocator)
@@ -93,7 +93,7 @@ impl Mapper {
                 let p3_entry = &p3[page.p3_index()];
                 // Check for 1GiB page
                 if let Some(start_frame) = p3_entry.pointed_frame() {
-                    if p3_entry.flags().contains(PageEntryFlags::HUGE_PAGE) {
+                    if p3_entry.flags().contains(EntryFlags::HUGE_PAGE) {
                         assert_eq!(start_frame.number % (PAGE_ENTRY_COUNT * PAGE_ENTRY_COUNT), 0);
                         return Some(Frame {
                             number: start_frame.number + page.p2_index() * PAGE_ENTRY_COUNT + page.p1_index()
@@ -104,7 +104,7 @@ impl Mapper {
                     let p2_entry = &p2[page.p2_index()];
                     // Check for 2MiB page
                     if let Some(start_frame) = p2_entry.pointed_frame() {
-                        if p2_entry.flags().contains(PageEntryFlags::HUGE_PAGE) {
+                        if p2_entry.flags().contains(EntryFlags::HUGE_PAGE) {
                             assert_eq!(start_frame.number % PAGE_ENTRY_COUNT, 0);
                             return Some(Frame {
                                 number: start_frame.number + page.p1_index()

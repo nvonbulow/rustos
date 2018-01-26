@@ -1,3 +1,4 @@
+#![feature(abi_x86_interrupt)]
 #![feature(alloc)]
 #![feature(allocator_api)]
 #![feature(global_allocator)]
@@ -8,8 +9,12 @@
 
 #[macro_use]
 extern crate alloc;
+extern crate bitfield;
+extern crate bit_field;
 #[macro_use]
 extern crate bitflags;
+#[macro_use]
+extern crate lazy_static;
 extern crate multiboot2;
 #[macro_use]
 extern crate once;
@@ -21,6 +26,7 @@ extern crate x86_64;
 
 #[macro_use]
 mod vga_buffer;
+mod interrupts;
 mod memory;
 
 #[no_mangle]
@@ -31,25 +37,22 @@ pub extern fn rust_main(multiboot_info: usize) {
     let boot_info = unsafe {
         multiboot2::load(multiboot_info)
     };
-    memory::init(boot_info);
+    let mut memory_controller = memory::init(boot_info);
+
     unsafe {
         HEAP_ALLOCATOR.lock().init(HEAP_START, HEAP_SIZE)
     }
-    kprintln!("Check 1");
-    use alloc::boxed::Box;
-    let heap_test = Box::new(42);
-    kprintln!("Check 2");
-    let mut test_vec = vec![1,2,3,4,5,6,7,8,9,0];
-    kprintln!("Check 3");
-    test_vec[5] = 2;
-    for i in test_vec {
-        kprint!("{} ", i);
+    interrupts::init(&mut memory_controller);
+
+    // unsafe { *(0xdeadbeaf as *mut u64) = 42; };
+
+    fn stack_overflow() {
+        stack_overflow();
     }
-    kprintln!("Check 4");
-    for i in 1..1000000 {
-        format!("String-O");
-    }
-    kprintln!("We did NOT crash!!");
+
+    stack_overflow();
+
+    kprintln!("It did not crash!");
     loop {}
 }
 

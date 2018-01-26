@@ -34,10 +34,10 @@ impl<L> Table<L> where L: HeirarchialLevel {
     pub fn next_table_create<A>(&mut self, index: usize, allocator: &mut A) -> &mut Table<L::NextLevel>
     where A: FrameAllocator {
         if self.next_table(index).is_none() {
-            assert!(!self.entries[index].flags().contains(PageEntryFlags::HUGE_PAGE),
+            assert!(!self.entries[index].flags().contains(EntryFlags::HUGE_PAGE),
                 "mapping code does not support huve pages yet");
             let frame = allocator.allocate_frame().expect("No frames available");
-            self.entries[index].set(frame, PageEntryFlags::PRESENT | PageEntryFlags::WRITABLE);
+            self.entries[index].set(frame, EntryFlags::PRESENT | EntryFlags::WRITABLE);
             self.next_table_mut(index).unwrap().zero();
         }
         self.next_table_mut(index).unwrap()
@@ -46,7 +46,7 @@ impl<L> Table<L> where L: HeirarchialLevel {
     fn next_table_address(&self, index: usize) -> Option<usize> {
         let entry_flags = self[index].flags();
         // Next table address is only valid if it's present and this entry is not huge
-        if entry_flags.contains(PageEntryFlags::PRESENT) && !entry_flags.contains(PageEntryFlags::HUGE_PAGE) {
+        if entry_flags.contains(EntryFlags::PRESENT) && !entry_flags.contains(EntryFlags::HUGE_PAGE) {
             let table_address = self as *const _ as usize;
             Some((table_address << 9) | index << 12)
         }

@@ -1,10 +1,10 @@
-use core::ops::{Deref, DerefMut};
+use core::ops::{Add, Deref, DerefMut};
 use core::ptr::Unique;
 use multiboot2::BootInformation;
 
 use memory::PAGE_SIZE;
 use super::{Frame, FrameAllocator};
-use self::entry::PageEntryFlags;
+use self::entry::EntryFlags;
 use self::mapper::Mapper;
 use self::table::{Table, Level1, Level4};
 use self::temporary_page::TemporaryPage;
@@ -62,6 +62,17 @@ impl Page {
     }
 }
 
+impl Add<usize> for Page {
+    type Output = Page;
+
+    fn add(self, rhs: usize) -> Self::Output {
+        Page {
+            number: self.number + rhs
+        }
+    }
+}
+
+#[derive(Copy, Clone)]
 pub struct PageIter {
     start: Page,
     end: Page,
@@ -119,14 +130,14 @@ impl ActivePageTable {
             let p4_table = temporary_page.map_table_frame(backup.clone(), self);
 
             // overwrite recursive mapping
-            self.p4_mut()[511].set(table.p4_frame.clone(), PageEntryFlags::PRESENT | PageEntryFlags::WRITABLE);
+            self.p4_mut()[511].set(table.p4_frame.clone(), EntryFlags::PRESENT | EntryFlags::WRITABLE);
             tlb::flush_all();
 
             // Execute f in the context of the inactive table
             f(self);
 
             // restore recursive mapping to original p4 table
-            p4_table[511].set(backup, PageEntryFlags::PRESENT | PageEntryFlags::WRITABLE);
+            p4_table[511].set(backup, EntryFlags::PRESENT | EntryFlags::WRITABLE);
             tlb::flush_all();
         }
         temporary_page.unmap(self);
@@ -158,7 +169,7 @@ impl InactivePageTable {
             let table = temporary_page.map_table_frame(frame.clone(), active_table);
             table.zero();
             // Set up recursive mapping
-            table[511].set(frame.clone(), PageEntryFlags::PRESENT | PageEntryFlags::WRITABLE);
+            table[511].set(frame.clone(), EntryFlags::PRESENT | EntryFlags::WRITABLE);
         }
         temporary_page.unmap(active_table);
         InactivePageTable {
@@ -190,7 +201,7 @@ pub fn remap_the_kernel<A>(allocator: &mut A, boot_info: &BootInformation) -> Ac
 
             kprintln!("mapping section at addr: {:#x}, size: {:#x}", section.addr, section.size);
 
-            let flags = PageEntryFlags::from_elf_section_flags(section);
+            let flags = EntryFlags::from_elf_section_flags(section);
 
             let start_frame = Frame::containing_address(section.start_address());
             let end_frame = Frame::containing_address(section.end_address() - 1);
@@ -202,11 +213,11 @@ pub fn remap_the_kernel<A>(allocator: &mut A, boot_info: &BootInformation) -> Ac
             Frame::range_inclusive(
                 Frame::containing_address(boot_info.start_address()),
                 Frame::containing_address(boot_info.end_address())),
-            PageEntryFlags::PRESENT,
+            EntryFlags::PRESENT,
             allocator
         );
         mapper.identity_map(Frame::containing_address(0xb8000),
-                            PageEntryFlags::WRITABLE, allocator);
+                            EntryFlags::WRITABLE, allocator);
     });
 
     let old_table = active_table.switch(new_table);

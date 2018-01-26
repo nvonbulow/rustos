@@ -13,12 +13,12 @@ impl PageEntry {
         self.0 = 0;
     }
 
-    pub fn flags(&self) -> PageEntryFlags {
-        PageEntryFlags::from_bits_truncate(self.0)
+    pub fn flags(&self) -> EntryFlags {
+        EntryFlags::from_bits_truncate(self.0)
     }
 
     pub fn pointed_frame(&self) -> Option<Frame> {
-        if self.flags().contains(PageEntryFlags::PRESENT) {
+        if self.flags().contains(EntryFlags::PRESENT) {
             Some(Frame::containing_address(
                 self.0 as usize & 0x000fffff_fffff000
             ))
@@ -28,14 +28,14 @@ impl PageEntry {
         }
     }
 
-    pub fn set(&mut self, frame: Frame, flags: PageEntryFlags) {
+    pub fn set(&mut self, frame: Frame, flags: EntryFlags) {
         assert_eq!(frame.start_address() & !0x000fffff_fffff000, 0);
         self.0 = (frame.start_address() as u64) | flags.bits();
     }
 }
 
 bitflags! {
-    pub struct PageEntryFlags: u64 {
+    pub struct EntryFlags: u64 {
         const PRESENT         = 1 << 0;
         const WRITABLE        = 1 << 1;
         const USER_ACCESSIBLE = 1 << 2;
@@ -52,21 +52,21 @@ bitflags! {
     }
 }
 
-impl PageEntryFlags {
-    pub fn from_elf_section_flags(section: &ElfSection) -> PageEntryFlags {
+impl EntryFlags {
+    pub fn from_elf_section_flags(section: &ElfSection) -> EntryFlags {
         use multiboot2::{ELF_SECTION_ALLOCATED, ELF_SECTION_WRITABLE, ELF_SECTION_EXECUTABLE};
 
-        let mut flags = PageEntryFlags::empty();
+        let mut flags = EntryFlags::empty();
 
         if section.flags().contains(ELF_SECTION_ALLOCATED) {
             // the section is loaded to memory
-            flags = flags | PageEntryFlags::PRESENT;
+            flags = flags | EntryFlags::PRESENT;
         }
         if section.flags().contains(ELF_SECTION_WRITABLE) {
-            flags = flags | PageEntryFlags::WRITABLE;
+            flags = flags | EntryFlags::WRITABLE;
         }
         if !section.flags().contains(ELF_SECTION_EXECUTABLE) {
-            flags = flags | PageEntryFlags::NO_EXECUTE;
+            flags = flags | EntryFlags::NO_EXECUTE;
         }
 
         flags

@@ -12,7 +12,7 @@ pub struct Table<L: TableLevel> {
     level: PhantomData<L>
 }
 
-impl<L> Table<L> where L: TableLevel {
+impl<L: TableLevel> Table<L>  {
     pub fn zero(&mut self) {
         for entry in self.entries.iter_mut() {
             entry.set_unused();
@@ -20,7 +20,7 @@ impl<L> Table<L> where L: TableLevel {
     }
 }
 
-impl<L> Table<L> where L: HeirarchialLevel {
+impl<L: HeirarchialLevel> Table<L> {
     pub fn next_table(&self, index: usize) -> Option<&Table<L::NextLevel>> {
         self.next_table_address(index)
             .map(|address| unsafe { &*(address as *const _) })
@@ -31,8 +31,7 @@ impl<L> Table<L> where L: HeirarchialLevel {
             .map(|address| unsafe { &mut *(address as *mut _) })
     }
 
-    pub fn next_table_create<A>(&mut self, index: usize, allocator: &mut A) -> &mut Table<L::NextLevel>
-    where A: FrameAllocator {
+    pub fn next_table_create<A: FrameAllocator>(&mut self, index: usize, allocator: &mut A) -> &mut Table<L::NextLevel> {
         if self.next_table(index).is_none() {
             assert!(!self.entries[index].flags().contains(EntryFlags::HUGE_PAGE),
                 "mapping code does not support huve pages yet");
@@ -56,7 +55,7 @@ impl<L> Table<L> where L: HeirarchialLevel {
     }
 }
 
-impl<L> Index<usize> for Table<L> where L: TableLevel {
+impl<L: TableLevel> Index<usize> for Table<L> {
     type Output = PageEntry;
 
     fn index(&self, index: usize) -> &PageEntry {
@@ -64,7 +63,7 @@ impl<L> Index<usize> for Table<L> where L: TableLevel {
     }
 }
 
-impl<L> IndexMut<usize> for Table<L> where L: TableLevel {
+impl<L: TableLevel> IndexMut<usize> for Table<L> {
     fn index_mut(&mut self, index: usize) -> &mut PageEntry {
         &mut self.entries[index]
     }

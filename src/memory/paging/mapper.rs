@@ -23,21 +23,18 @@ impl Mapper {
         unsafe { self.p4.as_mut() }
     }
 
-    pub fn map<A>(&mut self, page: Page, flags: EntryFlags, allocator: &mut A)
-        where A: FrameAllocator {
+    pub fn map<A: FrameAllocator>(&mut self, page: Page, flags: EntryFlags, allocator: &mut A) {
         let frame = allocator.allocate_frame().expect("Out of memory");
         self.map_to(page, frame, flags, allocator)
     }
 
-    pub fn map_range<A>(&mut self, pages: PageIter, flags: EntryFlags, allocator: &mut A)
-        where A: FrameAllocator {
+    pub fn map_range<A: FrameAllocator>(&mut self, pages: PageIter, flags: EntryFlags, allocator: &mut A) {
         for page in pages {
             self.map(page, flags, allocator);
         }
     }
 
-    pub fn map_to<A>(&mut self, page: Page, frame: Frame, flags: EntryFlags, allocator: &mut A)
-        where A: FrameAllocator {
+    pub fn map_to<A: FrameAllocator>(&mut self, page: Page, frame: Frame, flags: EntryFlags, allocator: &mut A) {
         let mut p3 = self.p4_mut().next_table_create(page.p4_index(), allocator);
         let mut p2 = p3.next_table_create(page.p3_index(), allocator);
         let mut p1 = p2.next_table_create(page.p2_index(), allocator);
@@ -46,21 +43,18 @@ impl Mapper {
         p1[page.p1_index()].set(frame, flags | EntryFlags::PRESENT);
     }
 
-    pub fn identity_map_range<A>(&mut self, frames: FrameIter, flags: EntryFlags, allocator: &mut A)
-        where A: FrameAllocator {
+    pub fn identity_map_range<A: FrameAllocator>(&mut self, frames: FrameIter, flags: EntryFlags, allocator: &mut A) {
         for frame in frames {
             &mut self.identity_map(frame, flags, allocator);
         }
     }
 
-    pub fn identity_map<A>(&mut self, frame: Frame, flags: EntryFlags, allocator: &mut A)
-        where A: FrameAllocator {
+    pub fn identity_map<A: FrameAllocator>(&mut self, frame: Frame, flags: EntryFlags, allocator: &mut A) {
         let page = Page::containing_address(frame.start_address());
         self.map_to(page, frame, flags, allocator)
     }
 
-    pub fn unmap<A>(&mut self, page: Page, allocator: &mut A)
-        where A: FrameAllocator {
+    pub fn unmap<A: FrameAllocator>(&mut self, page: Page, allocator: &mut A) {
         assert!(self.translate(page.start_address()).is_some());
 
         let p1 = self.p4_mut()

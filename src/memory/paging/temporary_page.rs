@@ -9,7 +9,7 @@ pub struct TemporaryPage {
 
 impl TemporaryPage {
 
-    pub fn new<A>(page: Page, allocator: &mut A) -> TemporaryPage where A: FrameAllocator {
+    pub fn new<A: FrameAllocator>(page: Page, allocator: &mut A) -> TemporaryPage {
         TemporaryPage {
             page,
             allocator: TinyAllocator::new(allocator)
@@ -41,7 +41,7 @@ impl TemporaryPage {
 struct TinyAllocator([Option<Frame>; 3]);
 
 impl TinyAllocator {
-    fn new<A>(allocator: &mut A) -> TinyAllocator where A: FrameAllocator {
+    fn new<A: FrameAllocator>(allocator: &mut A) -> TinyAllocator {
         let mut f = || allocator.allocate_frame();
         let frames = [f(), f(), f()];
         TinyAllocator(frames)

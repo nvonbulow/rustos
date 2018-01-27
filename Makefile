@@ -1,21 +1,32 @@
+buildtype := debug
+release: buildtype = release
 arch ?= x86_64
-kernel := build/kernel-$(arch).bin
-iso := build/os-$(arch).iso
+target ?= $(arch)-rustos
+
+build_dir := build/$(target)/$(buildtype)
+kernel := $(build_dir)/kernel-$(arch).bin
+kernel_debug := $(kernel).debug
+iso := $(build_dir)/os-$(arch).iso
 
 linker_script := src/arch/$(arch)/linker.ld
 grub_cfg := src/arch/$(arch)/grub.cfg
 assembly_source_files := $(wildcard src/arch/$(arch)/*.asm)
 assembly_object_files := $(patsubst src/arch/$(arch)/%.asm, \
-    build/arch/$(arch)/%.o, $(assembly_source_files))
+    $(build_dir)/arch/$(arch)/%.o, $(assembly_source_files))
 rust_source_files := $(shell find src/ -type f -name "*.rs")
 
-target ?= $(arch)-rustos
-buildtype ?= debug
 rust_os = target/$(target)/$(buildtype)/librustos.a
 
-.PHONY: all clean run debug iso kernel
+xargo_flags =
+release: xargo_flags += --release
+
+ld_flags = -n --gc-sections
+
+.PHONY: all clean run debug iso kernel release
 
 all: $(kernel)
+
+release: $(kernel) $(iso)
 
 clean:
 	@rm -rf build
@@ -33,19 +44,22 @@ gdb: $(kernel)
 iso: $(iso)
 
 $(iso): $(kernel) $(grub_cfg)
-	@mkdir -p build/isofiles/boot/grub
-	@cp $(kernel) build/isofiles/boot/kernel.bin
-	@cp $(grub_cfg) build/isofiles/boot/grub
-	@grub-mkrescue -o $(iso) build/isofiles 2> /dev/null
-	@rm -r build/isofiles
+	@mkdir -p $(build_dir)/isofiles/boot/grub
+	@cp $(kernel) $(build_dir)/isofiles/boot/kernel.bin
+	@cp $(grub_cfg) $(build_dir)/isofiles/boot/grub
+	@grub-mkrescue -o $(iso) $(build_dir)/isofiles 2> /dev/null
+	@rm -r $(build_dir)/isofiles
 
 $(kernel): $(rust_os) $(assembly_object_files) $(linker_script)
-	ld -n --gc-sections -T $(linker_script) -o $(kernel) $(assembly_object_files) $(rust_os)
+	ld $(ld_flags) -T $(linker_script) -o $(kernel) $(assembly_object_files) $(rust_os)
+	@objcopy --only-keep-debug $(kernel) $(kernel_debug)
+	@strip --strip-debug --strip-unneeded $(kernel)
+	@objcopy --add-gnu-debuglink="$(kernel_debug)" $(kernel)
 
 $(rust_os): $(rust_source_files)
-	@RUST_TARGET_PATH="$(shell pwd)" xargo build --target $(target)
+	@RUST_TARGET_PATH="$(shell pwd)" xargo build --target $(target) $(xargo_flags)
 
 # compile assembly files
-build/arch/$(arch)/%.o: src/arch/$(arch)/%.asm
+$(build_dir)/arch/$(arch)/%.o: src/arch/$(arch)/%.asm
 	@mkdir -p $(shell dirname $@)
 	nasm -felf64 $< -o $@

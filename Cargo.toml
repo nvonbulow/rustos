@@ -16,9 +16,11 @@ raw-cpuid = "3.0.0"
 rlibc = "1.0"
 spin = "0.4.6"
 volatile = "0.2.3"
-x86 = "0.8.1"
 x86_64 = "0.1.2"
 
 [dependencies.lazy_static]
 version = "1.0.0"
 features = ["spin_no_std"]
+
+[profile.release]
+debug = 2

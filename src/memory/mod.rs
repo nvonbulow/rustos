@@ -30,6 +30,7 @@ impl MemoryController {
     }
 }
 
+#[allow(dead_code)]
 pub fn align_down(addr: usize, align: usize) -> usize {
     if align.is_power_of_two() {
         addr & !(align - 1)
@@ -51,8 +52,8 @@ pub struct Frame {
     number: usize,
 }
 
+#[allow(dead_code)]
 impl Frame {
-
     pub fn range_inclusive(start: Frame, end: Frame) -> FrameIter {
         FrameIter {
             start,

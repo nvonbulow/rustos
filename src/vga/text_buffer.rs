@@ -53,6 +53,7 @@ pub struct Writer {
     buffer: Unique<Buffer>,
 }
 
+#[allow(dead_code)]
 impl Writer {
     pub fn write_byte(&mut self, byte: u8) {
         match byte {
@@ -122,17 +123,6 @@ pub static WRITER: Mutex<Writer> = Mutex::new(Writer {
     color_code: ColorCode::new(Color::LightGreen, Color::Black),
     buffer: unsafe { Unique::new_unchecked(0xb8000 as *mut _) },
 });
-
-macro_rules! kprint {
-    ($($arg:tt)*) => ({
-        $crate::vga::text_buffer::kprint(format_args!($($arg)*))
-    });
-}
-
-macro_rules! kprintln {
-    ($fmt:expr) => (kprint!(concat!($fmt, "\n")));
-    ($fmt:expr, $($arg:tt)*) => (kprint!(concat!($fmt, "\n"), $($arg)*));
-}
 
 pub fn kprint(args: fmt::Arguments) {
     use core::fmt::Write;

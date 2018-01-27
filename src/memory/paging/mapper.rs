@@ -1,6 +1,6 @@
 use super::{VirtualAddress, PhysicalAddress, Page, PageIter, PAGE_ENTRY_COUNT};
 use super::entry::*;
-use super::table::{self, Table, Level4, Level1};
+use super::table::{self, Table, Level4};
 use memory::{PAGE_SIZE, Frame, FrameIter, FrameAllocator};
 use core::ptr::Unique;
 
@@ -8,6 +8,7 @@ pub struct Mapper {
     p4: Unique<Table<Level4>>,
 }
 
+#[allow(dead_code)]
 impl Mapper {
     pub unsafe fn new() -> Mapper {
         Mapper {
@@ -35,9 +36,9 @@ impl Mapper {
     }
 
     pub fn map_to<A: FrameAllocator>(&mut self, page: Page, frame: Frame, flags: EntryFlags, allocator: &mut A) {
-        let mut p3 = self.p4_mut().next_table_create(page.p4_index(), allocator);
-        let mut p2 = p3.next_table_create(page.p3_index(), allocator);
-        let mut p1 = p2.next_table_create(page.p2_index(), allocator);
+        let p3 = self.p4_mut().next_table_create(page.p4_index(), allocator);
+        let p2 = p3.next_table_create(page.p3_index(), allocator);
+        let p1 = p2.next_table_create(page.p2_index(), allocator);
 
         assert!(p1[page.p1_index()].is_unused());
         p1[page.p1_index()].set(frame, flags | EntryFlags::PRESENT);
@@ -70,7 +71,7 @@ impl Mapper {
         use x86_64::VirtualAddress;
         tlb::flush(VirtualAddress(page.start_address()));
 
-        // allocator.deallocate_frame(frame);
+        allocator.deallocate_frame(frame);
     }
 
     pub fn translate(&self, vaddr: VirtualAddress) -> Option<PhysicalAddress> {

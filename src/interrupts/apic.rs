@@ -1,4 +1,7 @@
-use io::{UnsafePort, InOut};
+#![allow(dead_code)]
+
+use io::{UnsafePort};
+
 
 pub struct Apic {
 
@@ -9,7 +12,7 @@ impl Apic {
 }
 
 fn apic_enabled() -> bool {
-    use raw_cpuid::{CpuId, VendorInfo};
+    use raw_cpuid::CpuId;
     let cpu_id = CpuId::new();
 
     match cpu_id.get_feature_info() {

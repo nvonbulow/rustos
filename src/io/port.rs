@@ -54,11 +54,19 @@ pub struct Port<T> {
     phantom: PhantomData<T>,
 }
 
+#[allow(dead_code)]
 impl<T: InOut> Port<T> {
     pub const unsafe fn new(port: u16) -> Port<T> {
         Port {
             port,
             phantom: PhantomData
+        }
+    }
+
+    pub const unsafe fn offset(&mut self, offset: u16) -> Port<T> {
+        Port {
+            port: self.port + offset,
+            phantom: PhantomData,
         }
     }
 
@@ -86,6 +94,7 @@ pub struct UnsafePort<T> {
     phantom: PhantomData<T>
 }
 
+#[allow(dead_code)]
 impl<T: InOut> UnsafePort<T> {
     pub unsafe fn new(port: u16) -> UnsafePort<T> {
         UnsafePort {

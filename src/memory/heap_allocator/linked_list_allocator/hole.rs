@@ -301,7 +301,7 @@ fn deallocate(mut hole: &mut Hole, addr: usize, mut size: usize) {
                 let ptr = addr as *mut Hole;
                 mem::replace(unsafe { &mut *ptr }, new_hole);
                 // add the F block as the next block of the X block
-                hole.next = Some(unsafe { Unique::new(ptr) }.unwrap());
+                hole.next = Some(Unique::new(ptr).unwrap());
             }
         }
         break;

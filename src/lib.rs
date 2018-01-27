@@ -7,6 +7,7 @@
 #![feature(const_fn)]
 #![no_std]
 
+#[allow(unused_imports)]
 #[macro_use]
 extern crate alloc;
 extern crate bitfield;
@@ -26,6 +27,7 @@ extern crate x86;
 extern crate x86_64;
 
 #[macro_use]
+mod print;
 mod vga;
 mod interrupts;
 mod io;
@@ -46,16 +48,15 @@ pub extern fn rust_main(multiboot_info: usize) {
     }
     interrupts::init(&mut memory_controller);
 
-    // unsafe { *(0xdeadbeaf as *mut u64) = 42; };
-
-    fn stack_overflow() {
-        stack_overflow();
-    }
-
-    stack_overflow();
-
     kprintln!("It did not crash!");
-    loop {}
+
+    let com1 = &mut io::serial::COM1.lock();
+    loop {
+        match com1.read_byte() {
+            Some(b) => com1.write_byte_sync(b),
+            None => {}
+        }
+    }
 }
 
 pub const HEAP_START: usize = 0o_000_001_000_000_0000;

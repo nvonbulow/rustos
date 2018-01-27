@@ -82,7 +82,7 @@ impl FrameAllocator for AreaFrameAllocator {
         }
     }
 
-    fn deallocate_frame(&mut self, frame: Frame) {
-        unimplemented!()
+    fn deallocate_frame(&mut self, _frame: Frame) {
+        // Leak frame for now...
     }
 }

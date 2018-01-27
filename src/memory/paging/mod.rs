@@ -1,12 +1,11 @@
 use core::ops::{Add, Deref, DerefMut};
-use core::ptr::Unique;
 use multiboot2::BootInformation;
 
 use memory::PAGE_SIZE;
 use super::{Frame, FrameAllocator};
 use self::entry::EntryFlags;
 use self::mapper::Mapper;
-use self::table::{Table, Level1, Level4};
+use self::table::{Table, Level1};
 use self::temporary_page::TemporaryPage;
 
 pub mod entry;
@@ -126,7 +125,7 @@ impl ActivePageTable {
         use x86_64::registers::control_regs;
 
         {
-            let backup = Frame::containing_address(unsafe { control_regs::cr3().0 } as usize);
+            let backup = Frame::containing_address(control_regs::cr3().0 as usize);
             let p4_table = temporary_page.map_table_frame(backup.clone(), self);
 
             // overwrite recursive mapping

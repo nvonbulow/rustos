@@ -1,5 +1,5 @@
 
-use super::paging::{self, PageIter, Page, ActivePageTable};
+use super::paging::{PageIter, Page, ActivePageTable};
 use super::paging::entry::EntryFlags;
 use super::{PAGE_SIZE, FrameAllocator};
 
@@ -7,6 +7,7 @@ pub struct StackAllocator {
     range: PageIter,
 }
 
+#[allow(dead_code)]
 impl StackAllocator {
     pub fn new(range: PageIter) -> StackAllocator {
         StackAllocator {
@@ -56,6 +57,7 @@ pub struct Stack {
     bottom: usize,
 }
 
+#[allow(dead_code)]
 impl Stack {
     fn new(top: usize, bottom: usize) -> Stack {
         assert!(top > bottom);

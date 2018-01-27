@@ -130,7 +130,7 @@ pub fn kprint(args: fmt::Arguments) {
 }
 
 pub fn clear_screen() {
-    for _ in 0..BUFFER_HEIGHT {
-        kprintln!("");
+    for row in 0..BUFFER_HEIGHT {
+        WRITER.lock().clear_row(row);
     }
 }

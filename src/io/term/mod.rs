@@ -2,7 +2,7 @@ use core::fmt;
 
 pub mod ansi;
 
-static PRINTER: PrinterDriver = PrinterDriver::VGA_TEXT_BUFFER;
+static PRINTER: PrinterDriver = PrinterDriver::SERIAL_COM1;
 
 pub struct PrinterDriver(fn(fmt::Arguments));
 

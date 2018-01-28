@@ -198,7 +198,7 @@ pub fn remap_the_kernel<A: FrameAllocator>(allocator: &mut A, boot_info: &BootIn
             }
             assert_eq!(section.start_address() % PAGE_SIZE, 0, "sections need to be page aligned!");
 
-            kprintln!("mapping section at addr: {:#x}, size: {:#x}", section.addr, section.size);
+            // kprintln!("mapping section at addr: {:#x}, size: {:#x}", section.addr, section.size);
 
             let flags = EntryFlags::from_elf_section_flags(section);
 
@@ -225,6 +225,6 @@ pub fn remap_the_kernel<A: FrameAllocator>(allocator: &mut A, boot_info: &BootIn
     // Create a guard page. The stack is right above the old page table so use p1, p2, and p3
     // as extra space and a page fault will occur on stack overflow instead of silent corruption
     active_table.unmap(old_p4_page, allocator);
-    kprintln!("Guard Page at 0x{:x}", old_p4_page.start_address());
+    // kprintln!("Guard Page at 0x{:x}", old_p4_page.start_address());
     active_table
 }

@@ -5,10 +5,11 @@ use alloc::String;
 pub use self::TextAttribute::*;
 pub use self::AnsiSequence::*;
 
-const ESCAPE: char = '\x1b';
+pub const ESCAPE: char = '\x1b';
 
 pub trait AnsiWrite: fmt::Write {
     fn write_ansi_str(&mut self, s: &str) -> fmt::Result {
+        use core::fmt::Write;
         let mut chars = s.chars();
         while let Some(char) = chars.next() {
             match char {
@@ -28,9 +29,7 @@ pub trait AnsiWrite: fmt::Write {
                     }
                 },
                 c => {
-                    if !c.is_ascii_control() {
-                        self.write_char(c).unwrap();
-                    }
+                    self.write_char(c).unwrap();
                 }
             };
         }
@@ -160,8 +159,16 @@ impl AnsiSequence {
     pub fn parse(s: &str) -> Option<Self> {
         let mut chars = s.chars();
         // Make sure first two chars are `ESCAPE and '['`
-        match (chars.next(), chars.next()) {
-            (Some(ESCAPE), Some('[')) => {},
+        match chars.next() {
+            Some(ESCAPE) => {
+                match chars.next() {
+                    Some('[') => {},
+                    _ => {
+                        return None;
+                    }
+                }
+            },
+            Some('[') => {},
             _ => {
                 return None;
             }

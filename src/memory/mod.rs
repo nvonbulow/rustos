@@ -122,8 +122,8 @@ pub fn init(boot_info: &BootInformation) -> MemoryController {
         .map(|s| s.addr + s.size)
         .max().unwrap();
 
-    kprintln!("Kernel start: {:#x}; Kernel end: {:#x}", kernel_start, kernel_end);
-    kprintln!("Multiboot start: {:#x}; Multiboot end: {:#x}", boot_info.start_address(), boot_info.end_address());
+    // kprintln!("Kernel start: {:#x}; Kernel end: {:#x}", kernel_start, kernel_end);
+    // kprintln!("Multiboot start: {:#x}; Multiboot end: {:#x}", boot_info.start_address(), boot_info.end_address());
 
     let mut frame_allocator = AreaFrameAllocator::new(
         kernel_start as usize, kernel_end as usize,

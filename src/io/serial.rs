@@ -1,6 +1,7 @@
 use core::fmt;
 use spin::Mutex;
 
+use super::term::ansi::{self, AnsiWrite, AnsiSequence};
 use super::Port;
 
 #[allow(dead_code)]
@@ -172,6 +173,10 @@ impl<'a> SerialWriter<'a> {
         }
     }
 
+    pub fn write_ansi(&mut self, s: &str) {
+        self.write_ansi_str(s).unwrap();
+    }
+
     pub fn write_str(&mut self, s: &str) {
         for byte in s.bytes() {
             self.0.write_byte(byte);
@@ -185,9 +190,22 @@ impl<'a> SerialWriter<'a> {
 
 impl<'a> fmt::Write for SerialWriter<'a> {
     fn write_str(&mut self, s: &str) -> fmt::Result {
-        for byte in s.bytes() {
-            self.write_byte(byte);
-        }
+        self.write_ansi(s);
+        Ok(())
+    }
+
+    fn write_char(&mut self, c: char) -> fmt::Result {
+        self.write_byte(c as u8);
+        Ok(())
+    }
+}
+
+impl<'a> AnsiWrite for SerialWriter<'a> {
+    // We can pass the sequence right through since we're not the ones displaying it
+    fn write_ansi_sequence(&mut self, seq: AnsiSequence) -> fmt::Result {
+        use core::fmt::Write;
+        self.write_char(ansi::ESCAPE);
+        self.write_str(seq.to_string().as_str());
         Ok(())
     }
 }

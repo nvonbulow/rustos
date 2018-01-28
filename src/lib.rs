@@ -33,7 +33,6 @@ mod memory;
 #[no_mangle]
 pub extern fn rust_main(multiboot_info: usize) {
     io::vga::text_buffer::clear_screen();
-    kprintln!("Hello!");
 
     let boot_info = unsafe {
         multiboot2::load(multiboot_info)
@@ -50,9 +49,10 @@ pub extern fn rust_main(multiboot_info: usize) {
     {
         use io::term::ansi::*;
         let mut parsed = AnsiSequence::parse("\x1b[12A");
-        kprintln!("{:#?}", parsed.unwrap().to_string());
-        parsed = AnsiSequence::parse("\x1b[35;40m");
-        kprintln!("{:#?}", parsed.unwrap().to_string());
+        kprintln!("\x1b[1;35m");
+        kprintln!("{:#?}", parsed.unwrap());
+        parsed = AnsiSequence::parse("\x1b[1;35m");
+        kprintln!("{:#?}", parsed.unwrap());
     }
 
     let com1 = &mut io::serial::COM1.lock();

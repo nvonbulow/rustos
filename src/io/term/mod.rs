@@ -1,18 +1,20 @@
 use core::fmt;
 
-static PRINTER: PrinterDriver = PrinterDriver::SERIAL_COM1;
+pub mod ansi;
+
+static PRINTER: PrinterDriver = PrinterDriver::VGA_TEXT_BUFFER;
 
 pub struct PrinterDriver(fn(fmt::Arguments));
 
 #[allow(dead_code)]
 impl PrinterDriver {
-    const VGA_TEXT_BUFFER: Self = PrinterDriver(::vga::text_buffer::kprint);
+    const VGA_TEXT_BUFFER: Self = PrinterDriver(::io::vga::text_buffer::kprint);
     const SERIAL_COM1: Self = PrinterDriver(::io::serial::kprint);
 }
 
 macro_rules! kprint {
     ($($arg:tt)*) => ({
-        $crate::print::kprint(format_args!($($arg)*))
+        $crate::io::term::kprint(format_args!($($arg)*))
     });
 }
 

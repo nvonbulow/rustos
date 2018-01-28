@@ -26,15 +26,13 @@ extern crate volatile;
 extern crate x86_64;
 
 #[macro_use]
-mod print;
-mod vga;
-mod interrupts;
 mod io;
+mod interrupts;
 mod memory;
 
 #[no_mangle]
 pub extern fn rust_main(multiboot_info: usize) {
-    vga::text_buffer::clear_screen();
+    io::vga::text_buffer::clear_screen();
     kprintln!("Hello!");
 
     let boot_info = unsafe {
@@ -48,6 +46,14 @@ pub extern fn rust_main(multiboot_info: usize) {
     interrupts::init(&mut memory_controller);
 
     kprintln!("It did not crash!");
+
+    {
+        use io::term::ansi::*;
+        let mut parsed = AnsiSequence::parse("\x1b[12A");
+        kprintln!("{:#?}", parsed.unwrap().to_string());
+        parsed = AnsiSequence::parse("\x1b[35;40m");
+        kprintln!("{:#?}", parsed.unwrap().to_string());
+    }
 
     let com1 = &mut io::serial::COM1.lock();
     loop {

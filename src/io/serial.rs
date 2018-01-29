@@ -204,7 +204,7 @@ impl<'a> AnsiWrite for SerialWriter<'a> {
     // We can pass the sequence right through since we're not the ones displaying it
     fn write_ansi_sequence(&mut self, seq: AnsiSequence) -> fmt::Result {
         use core::fmt::Write;
-        self.write_char(ansi::ESCAPE);
+        self.write_char(ansi::ESCAPE).unwrap();
         self.write_str(seq.to_string().as_str());
         Ok(())
     }

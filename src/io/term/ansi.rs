@@ -9,7 +9,6 @@ pub const ESCAPE: char = '\x1b';
 
 pub trait AnsiWrite: fmt::Write {
     fn write_ansi_str(&mut self, s: &str) -> fmt::Result {
-        use core::fmt::Write;
         let mut chars = s.chars();
         while let Some(char) = chars.next() {
             match char {
@@ -97,7 +96,7 @@ pub enum ScreenMode {
 #[derive(Debug, Copy, Clone)]
 #[allow(dead_code)]
 pub enum AnsiSequence {
-    CursorPosition { line: u8, column: u8 },
+    CursorPosition { row: u8, col: u8 },
     CursorUp(u8),
     CursorDown(u8),
     CursorForward(u8),
@@ -118,8 +117,8 @@ impl AnsiSequence {
     pub fn to_string(&self) -> String {
         use alloc::string::ToString;
         let code = match *self {
-            CursorPosition { line, column} => {
-                format!("{};{}H", line, column)
+            CursorPosition { row, col } => {
+                format!("{};{}H", row, col)
             },
             CursorUp(amount) => {
                 format!("{}A", amount)
@@ -156,6 +155,10 @@ impl AnsiSequence {
         // format!("{}[{}", ESCAPE, code)
     }
 
+    pub fn to_escaped_string(&self) -> String {
+        format!("{}{}", ESCAPE, self.to_string())
+    }
+
     pub fn parse(s: &str) -> Option<Self> {
         let mut chars = s.chars();
         // Make sure first two chars are `ESCAPE and '['`
@@ -180,8 +183,8 @@ impl AnsiSequence {
             if c.is_alphabetic() {
                 return Some(match c {
                     'H' | 'f' => { CursorPosition {
-                        line: args.0[0].unwrap_or(0 as u8),
-                        column: args.0[1].unwrap_or(0 as u8),
+                        row: args.0[0].unwrap_or(0 as u8),
+                        col: args.0[1].unwrap_or(0 as u8),
                     }},
                     'A' => { CursorUp(args.0[0].unwrap_or(1 as u8)) },
                     'B' => { CursorDown(args.0[0].unwrap_or(1 as u8)) },
@@ -189,7 +192,19 @@ impl AnsiSequence {
                     'D' => { CursorBackward(args.0[0].unwrap_or(1 as u8)) },
                     's' => { SaveCursorPosition },
                     'u' => { RestoreCursorPosition },
-                    'J' => { EraseDisplay },
+                    'J' => {
+                        if let Some(arg) = args.0[0] {
+                            if arg == 2 {
+                                EraseDisplay
+                            }
+                            else {
+                                UnknownSequence
+                            }
+                        }
+                        else {
+                            UnknownSequence
+                        }
+                    },
                     'K' => { EraseLine },
                     'm' => {
                         let mut mapped_vals: [Option<TextAttribute>; MAX_ARGS] = [None; MAX_ARGS];

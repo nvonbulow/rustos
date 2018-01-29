@@ -48,17 +48,27 @@ pub extern fn rust_main(multiboot_info: usize) {
 
     {
         use io::term::ansi::*;
-        let mut parsed = AnsiSequence::parse("\x1b[12A");
-        kprintln!("\x1b[1;35m");
-        kprintln!("{:#?}", parsed.unwrap());
-        parsed = AnsiSequence::parse("\x1b[1;35m");
-        kprintln!("{:#?}", parsed.unwrap());
+        let green: AnsiSequence = AnsiSequence::SetGraphicsMode([
+            Some(TextAttribute::Green),
+            None,
+            None,
+        ]);
+        let red: AnsiSequence = AnsiSequence::SetGraphicsMode([
+            Some(TextAttribute::Red),
+            None,
+            None,
+        ]);
+        kprintln!("{}RED", red.to_escaped_string());
+        kprint!("{}GREEN", green.to_escaped_string());
     }
 
     let com1 = &mut io::serial::COM1.lock();
     loop {
         match com1.read_byte() {
-            Some(b) => com1.write_byte_sync(b),
+            Some(b) => {
+                com1.write_byte_sync(b);
+                kprint!("{}", b as char);
+            },
             None => {}
         }
     }

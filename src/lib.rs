@@ -49,17 +49,17 @@ pub extern fn rust_main(multiboot_info: usize) {
     {
         use io::term::ansi::*;
         let green: AnsiSequence = AnsiSequence::SetGraphicsMode([
-            Some(TextAttribute::Green),
+            Some(TextAttribute::Blue),
             None,
             None,
         ]);
         let red: AnsiSequence = AnsiSequence::SetGraphicsMode([
-            Some(TextAttribute::Red),
+            Some(TextAttribute::Magenta),
             None,
             None,
         ]);
-        kprintln!("{}RED", red.to_escaped_string());
-        kprint!("{}GREEN", green.to_escaped_string());
+        kprintln!("{}MAGENTA", red.to_escaped_string());
+        kprint!("{}BLUE", green.to_escaped_string());
     }
 
     let com1 = &mut io::serial::COM1.lock();

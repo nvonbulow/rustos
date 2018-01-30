@@ -1,5 +1,10 @@
-buildtype := debug
-release: buildtype = release
+RELEASE ?= 0
+ifeq ($(RELEASE), 1)
+    buildtype := release
+else
+    buildtype := debug
+endif
+
 arch ?= x86_64
 target ?= $(arch)-rustos
 
@@ -18,15 +23,15 @@ rust_source_files := $(shell find src/ -type f -name "*.rs")
 rust_os = target/$(target)/$(buildtype)/librustos.a
 
 xargo_flags =
-release: xargo_flags += --release
+ifeq ($(RELEASE), 1)
+    xargo_flags += --release
+endif
 
 ld_flags = -n --gc-sections
 
 .PHONY: all clean run debug iso kernel release
 
 all: $(kernel)
-
-release: $(kernel) $(iso)
 
 clean:
 	@rm -rf build
@@ -49,6 +54,7 @@ $(iso): $(kernel) $(grub_cfg)
 	@cp $(grub_cfg) $(build_dir)/isofiles/boot/grub
 	@grub-mkrescue -o $(iso) $(build_dir)/isofiles 2> /dev/null
 	@rm -r $(build_dir)/isofiles
+	@echo $(buildtype)
 
 $(kernel): $(rust_os) $(assembly_object_files) $(linker_script)
 	ld $(ld_flags) -T $(linker_script) -o $(kernel) $(assembly_object_files) $(rust_os)

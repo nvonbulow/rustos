@@ -10,7 +10,9 @@ target ?= $(arch)-rustos
 
 build_dir := build/$(target)/$(buildtype)
 kernel := $(build_dir)/kernel-$(arch).bin
-kernel_debug := $(kernel).debug
+ifeq ($(RELEASE), 1)
+    kernel_debug := $(kernel).debug
+endif
 iso := $(build_dir)/os-$(arch).iso
 
 linker_script := src/arch/$(arch)/linker.ld
@@ -31,7 +33,7 @@ ld_flags = -n --gc-sections
 
 .PHONY: all clean run debug iso kernel release
 
-all: $(kernel)
+all: $(kernel) $(kernel_debug)
 
 clean:
 	@rm -rf build
@@ -58,6 +60,8 @@ $(iso): $(kernel) $(grub_cfg)
 
 $(kernel): $(rust_os) $(assembly_object_files) $(linker_script)
 	ld $(ld_flags) -T $(linker_script) -o $(kernel) $(assembly_object_files) $(rust_os)
+
+$(kernel_debug):
 	@objcopy --only-keep-debug $(kernel) $(kernel_debug)
 	@strip --strip-debug --strip-unneeded $(kernel)
 	@objcopy --add-gnu-debuglink="$(kernel_debug)" $(kernel)
